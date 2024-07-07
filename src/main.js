@@ -1,7 +1,7 @@
 import core from '@actions/core'
 import github from '@actions/github'
 
-import utils from './utils'
+import * as utils from './utils.js'
 
 /**
  * The main function for the action.
@@ -10,15 +10,19 @@ import utils from './utils'
 
 async function run() {
   try {
-    const octokit = github.getOctokit(token)
-    const org = core.getInput('org', { required: true })
+    const org = core.getInput('org', { required: false })
     const owner = core.getInput('owner', { required: true })
-    const pr_number = core.getInput('pr_number', { required: true })
     const repo = core.getInput('repo', { required: true })
+    const pr_number = core.getInput('pr_number', { required: true })
     const token = core.getInput('gh_token', { required: true })
+    const octokit = github.getOctokit(token)
 
     // Get a list of all reviews of the PR
     const reviews = utils.getReviews(octokit, owner, repo, pr_number)
+    if (isEmpty(reviews)) {
+        core.info("There are no reviews to check")
+        exit()
+    } 
 
     // Filter reviews by status == 'APPROVED'
     const approvedReviews = utils.getApprovals(reviews)

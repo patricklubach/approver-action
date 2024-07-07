@@ -1,7 +1,7 @@
 {
   "name": "GitHub Actions (JavaScript)",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
-  "postCreateCommand": "npm install",
+  "postCreateCommand": "npm install --include=dev",
   "customizations": {
     "codespaces": {
       "openFiles": ["README.md"]

@@ -34,7 +34,7 @@ jobs:
 
       - name: Check Format
         id: npm-format-check
-        run: npm run format
+        run: npm run format:check
 
       - name: Lint
         id: npm-lint
@@ -49,8 +49,16 @@ jobs:
         id: checkout
         uses: actions/checkout@v4
 
+      - name: Install Dependencies
+        id: npm-ci
+        run: npm ci
+
       - name: Test Local Action
         id: test-approver-action
         uses: ./
         with:
-          milliseconds: 1000
+          approvers_file: .approvers.yaml
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          owner: ${{ github.repository_owner }}
+          repo: approver-action
+          pr_number: ${{ github.event.number }}
