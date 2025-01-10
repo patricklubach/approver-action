@@ -243,7 +243,6 @@ function getReviewersLeft(client, org, desiredReviewers, approvers, type, amount
 }
 
 export {
-  computeApprovers,
   getApprovals,
   getApprovers,
   getMatchingRule,
