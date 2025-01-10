@@ -32,7 +32,7 @@ async function run() {
     )
 
     // Determines on what to check. Either title or branch name
-    checkOn = reviewersFile.hasOwnProperty('check_on') ? reviewersFile.check_on : 'branch_name'
+    const checkOn = reviewersFile.hasOwnProperty('check_on') ? reviewersFile.check_on : 'branch_name'
 
     switch(checkOn) {
       case 'title':
