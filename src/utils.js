@@ -58,7 +58,7 @@ function getApprovers(reviews) {
           review.user.login].join(':'))
       }
     }
-    core.info(`Following user reviewed and approved yet: ${reviewers}`)
+    core.info(`Following users reviewed and approved yet: ${reviewers}`)
     return reviewers
   } catch(error) {
     throw new Error(`Cannot get reviewers. Details: ${error.message}`)
@@ -132,70 +132,57 @@ function isMatchingPattern(checkOn, pattern) {
   }
 }
 
-function setApprovers(client, owner, repo, pr_number, allReviewers) {
-  core.info(`Setting reviewers for pull request #${pr_number}`)
+function setPrReviewers(client, owner, repo, pullRequest, reviewers) {
+  core.info('Checking which reviewers are already set on pr')
+
   try {
-    const url = `/repos/${owner}/${repo}/pulls/${pr_number}/requested_reviewers`
-    core.debug(`Setting reviewers on endpoint: ${url}`)
-    const reviewers = []
-    const teamReviewers = []
+    const userReviewers = reviewers.filter((reviewer) => reviewer.startsWith('user'))
+    const teamReviewers = reviewers.filter((reviewer) => reviewer.startsWith('team'))
+    core.debug(`required reviewers are: ${reviewers}`)
+    core.debug(`requested reviewer users are: ${userReviewers}`)
+    core.debug(`requested reviewer teams are: ${teamReviewers}`)
 
-    // TODO: if pr creator is in approvers file rule defined skip it
-    allReviewers.forEach(reviewer => {
-      let [type, principle] = reviewer.split(':')
+    if(JSON.stringify(reviewers.sort()) != JSON.stringify(requestedReviewerUsers.concat(requestedReviewerTeams).sort())) {
+      core.info(`Setting reviewers for pull request #${pullRequest.number}`)
+      const url = `/repos/${owner}/${repo}/pulls/${pullRequest.number}/requested_reviewers`
+      core.debug(`Setting reviewers on endpoint: ${url}`)
+      return client.request(`POST ${url}`, {
+        owner: owner,
+        repo: repo,
+        pull_number: pullRequest.number,
+        reviewers: userReviewers,
+        team_reviewers: teamReviewers,
+        headers: {
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      })
 
-      switch(type) {
-        case 'user': {
-          reviewers.push(principle)
-          break
-        }
-        case 'team': {
-          teamReviewers.push(principle)
-          break
-        }
-        default: {
-          throw new Error(
-            `The ${type} "${principle}" cannot be verified because it is not of type "user" or "team"!`
-          )
-        }
-      }
-    })
-    core.info(`Setting following reviewers for pull request #${pr_number}: ${allReviewers}`)
-    return client.request(`POST ${url}`, {
-      owner: owner,
-      repo: repo,
-      pull_number: pr_number,
-      reviewers: reviewers,
-      team_reviewers: teamReviewers,
-      headers: {
-        'X-GitHub-Api-Version': '2022-11-28'
-      }
-    })
+    }
   } catch(error) {
     throw new Error(
-      `The approvers for pull request #${pr_number} could not be set. Details: ${error.message}`
+      `The reviewers for pull request #${pullRequest.number} could not be set. Details: ${error.message}`
     )
   }
 }
 
-function computeApprovers(client, org, approvers) {
-  core.info('Resolving teams from list of approvers')
+function expandReviewers(client, org, reviewers) {
+  core.info('Expand list of reviewers and resolve teams to users')
   try {
-    let expandedApprovers = []
+    let expandedReviewers = []
 
-    for(let i = 0; i < approvers.length; i++) {
-      let approver = approvers[i]
+    for(let i = 0; i < reviewers.length; i++) {
+      let approver = reviewers[i]
       let [type, principle] = approver.split(':')
 
       switch(type) {
         case 'user': {
-          expandedApprovers.push(approver)
+          expandedReviewers.push(approver)
           break
         }
         case 'team': {
           let members = getTeamMembers(client, org, principle)
           core.debug(`Resolved team ${principle} to ${members}`)
-          expandedApprovers.concat(members)
+          expandedReviewers.concat(members)
           break
         }
         default: {
@@ -205,39 +192,11 @@ function computeApprovers(client, org, approvers) {
         }
       }
     }
-    core.debug(`List of expanded approvers: ${expandedApprovers}`)
-    return [...new Set(expandedApprovers)]
+    core.debug(`List of expanded reviewers: ${expandedReviewers}`)
+    return [...new Set(expandedReviewers)]
   } catch(error) {
-    throw new Error(`Cannot compute approvers list. Details: ${error.message}`)
+    throw new Error(`Cannot expand reviewers list. Details: ${error.message}`)
   }
-}
-
-function getApproversLeft(desiredApprovers, approvers, approvalsNeededCount) {
-  core.info('Checking if approvals are still needed')
-  core.debug(`Users which approved yet: ${approvers.sort()}`)
-  core.debug(`Users which are desired to approve: ${desiredApprovers.sort()}`)
-  core.debug(`How many approvals are needed?: ${approvalsNeededCount > 0 ? approvalsNeededCount : 'ALL'}`)
-
-  const approversLeft = []
-  const approversVerified = []
-
-  desiredApprovers.forEach(desiredApprover => {
-    if(!approvers.includes(desiredApprover)) {
-      approversLeft.push(desiredApprover)
-    } else {
-      approversVerified.push(desiredApprover)
-    }
-  })
-
-  if(approvalsNeededCount == 0 && approversLeft.length > 0) {
-    throw new Error(`There are still approvals required from: ${approversLeft}`)
-  }
-
-  if(approvalsNeededCount > 0 && approversVerified < approvalsNeededCount) {
-    throw new Error(`There are still approvals required!`)
-  }
-
-  core.debug(`Check was successful`)
 }
 
 async function getTeamMembers(client, org, teamSlug) {
@@ -257,16 +216,43 @@ async function getTeamMembers(client, org, teamSlug) {
   }
 }
 
+function getReviewersLeft(client, org, desiredReviewers, approvers, type, amount = 0) {
+  core.info('Checking if approvals are still needed')
+  core.debug(`Desired reviewers are: ${desiredReviewers}`)
+  core.debug(`Users which approved yet: ${approvers}`)
+  core.debug(`Type is: ${type}`)
+
+  core.info('Determine if approvals are still needed')
+  switch(type) {
+    case 'ALL':
+      if(expandReviewers(client, org, desiredReviewers).length == approvers.length) {
+        return
+      } else {
+        throw new Error('Not enough approvals!');
+      }
+    case 'AMOUNT':
+      if(approvers.length >= desiredReviewers.length) {
+        return
+      } else {
+        throw new Error('Not enough approvals!');
+      }
+    case 'ONE_OF_EACH':
+      break;
+    default:
+      throw new Error(`'type' property is misconfigured. Allowed values are: [ALL, AMOUNT, ONE_OF_EACH]. Got: ${type}`)
+  }
+}
+
 export {
   computeApprovers,
   getApprovals,
   getApprovers,
-  getApproversLeft,
   getMatchingRule,
   getPullRequest,
+  getReviewersLeft,
   getReviews,
   getTeamMembers,
   getYamlData,
   isMatchingPattern,
-  setApprovers
+  setPrReviewers
 }

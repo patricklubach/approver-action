@@ -2,7 +2,7 @@ check_on: branch_name
 
 rules:
   - regex: ^feature/
-    count: 1
+    amount: 1
     approvers:
       - user:racoon63
   - regex: "^dependabot/"
