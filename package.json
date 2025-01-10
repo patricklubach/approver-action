@@ -1,6 +1,6 @@
 {
-  "name": "approver",
-  "description": "approver action",
+  "name": "reviewers",
+  "description": "reviewers action",
   "author": "patricklubach",
   "version": "1.0.0",
   "main": "index.js",

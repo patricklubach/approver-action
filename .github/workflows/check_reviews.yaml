@@ -26,6 +26,6 @@ jobs:
         id: check-reviews
         uses: ./
         with:
-          approvers_file: .approvers.yaml
+          reviewers_file: .reviewers.yaml
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}

@@ -2,12 +2,12 @@ check_on: branch_name
 
 rules:
   - regex: ^feature/
-    count: 1
-    approvers:
+    amount: 1
+    reviewers:
       - user:racoon63
   - regex: "^dependabot/"
-    approvers:
+    reviewers:
       - user:patricklubach
   - default: true
-    approvers:
+    reviewers:
       - user:patricklubach
