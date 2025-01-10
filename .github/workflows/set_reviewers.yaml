@@ -30,7 +30,7 @@ jobs:
       - name: Set reviewers
         uses: ./
         with:
-          approvers_file: .approvers.yaml
+          reviewers_file: .reviewers.yaml
           token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ github.event.pull_request.number }}
           set_reviewers: true

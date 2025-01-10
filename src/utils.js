@@ -156,7 +156,6 @@ function setPrReviewers(client, owner, repo, pullRequest, reviewers) {
           'X-GitHub-Api-Version': '2022-11-28'
         }
       })
-
     }
   } catch(error) {
     throw new Error(
