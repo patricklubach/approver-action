@@ -75,7 +75,7 @@ jobs:
           set_reviewers: true
 ```
 
-When you want to let the action check the reviewes when a review was dismissed or submitted:
+When you want to let the action check the reviews when a review was dismissed or submitted:
 
 ```yaml
 name: Check reviews

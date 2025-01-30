@@ -6,8 +6,9 @@ import * as utils from './utils.js'
 async function run() {
   try {
     const prNumber = core.getInput('pr_number', { required: true })
+    const setReviewers =
+      core.getInput('set_reviewers', { required: false }) || false
     const token = core.getInput('token', { required: true })
-    const setReviewers = core.getInput('set_reviewers', { required: false }) || false
     const octokit = new Octokit({ auth: token })
     const repo = process.env.GITHUB_REPOSITORY
     const [owner, repoName] = repo.split('/')
@@ -32,19 +33,23 @@ async function run() {
     )
 
     // Determines on what to check. Either title or branch name
-    let checkOn = reviewersFile.hasOwnProperty('check_on') ? reviewersFile.check_on : 'branch_name'
+    let checkOn = reviewersFile.hasOwnProperty('check_on')
+      ? reviewersFile.check_on
+      : 'branch_name'
 
-    switch(checkOn) {
+    switch (checkOn) {
       case 'title':
         checkOn = pullRequest.title
         core.debug(`Action will check on title: "${checkOn}"`)
-        break;
+        break
       case 'branch_name':
         checkOn = pullRequest.head.ref
         core.debug(`Action will check on branch: "${checkOn}"`)
-        break;
+        break
       default:
-        throw new Error(`check_on property is misconfigured. Allowed values are: [title, branch_name]. Got: ${reviewersFile.check_on}`)
+        throw new Error(
+          `check_on property is misconfigured. Allowed values are: [title, branch_name]. Got: ${reviewersFile.check_on}`
+        )
     }
 
     // Get the rule who matches the PR title.
@@ -52,13 +57,25 @@ async function run() {
     const rule = utils.getMatchingRule(checkOn, reviewersFile.rules)
     const reviewers = rule.reviewers
 
-    // check if requested reviewers are already set on pr
-    // this can be configured using the input
-    if(setReviewers) {
-      core.info('set_reviewers is set')
-      const response = utils.setPrReviewers(octokit, owner, repo, pullRequest, reviewers)
-      core.info(`Updated reviewers for PR #${prNumber}`)
-      // TODO: Check for response code and if code == 200 return success if not throw error
+    // if set_reviewers property is set to true,
+    // check if requested reviewers are already set on pr.
+    // if not these are set according to the reviewers rule.
+    if (setReviewers) {
+      core.debug('set_reviewers is set')
+      const response = await utils.setPrReviewers(
+        octokit,
+        owner,
+        repo,
+        pullRequest,
+        reviewers
+      )
+      if (response.status) {
+        core.info(`Updated reviewers for PR #${prNumber}`)
+      } else {
+        throw new Error(
+          `Could not update PR succesfully. Status code: ${response.status}`
+        )
+      }
       return
     }
 
@@ -70,13 +87,13 @@ async function run() {
       prNumber
     )
 
-    if(reviewers.length > reviews.length) {
+    if (reviewers.length > reviews.length) {
       throw new Error(`There are still reviews required.`)
     } else {
       core.info(`There are ${reviews.length} reviews to check`)
     }
 
-    // Filter reviews by status == 'APPROVED'
+    // Filter list of reviews by status == 'APPROVED'
     const approvedReviews = utils.getApprovals(reviews)
 
     // Create list of users from approved reviews
@@ -84,7 +101,8 @@ async function run() {
 
     // Check if all desired reviewers approved PR
     const type = rule.hasOwnProperty('type') ? rule.type : 'ONE_OF_EACH'
-    const amount = rule.hasOwnProperty('amount') ? rule.amount : 0
+    const amount =
+      rule.type == '' && rule.hasOwnProperty('amount') ? rule.amount : 0
     utils.getReviewersLeft(octokit, owner, reviewers, approvers, type, amount)
     core.info(`Rule is fulfilled`)
   } catch(error) {
