@@ -20,22 +20,7 @@ class GithubMember extends Member {
 
     this.login = data.login || null
     this.id = data.id || null
-    this.nodeId = data.node_id || null
-    this.avatarUrl = data.avatar_url || null
-    this.gravatarId = data.gravatar_id || null
-    this.profileUrl = data.html_url || null
-    this.apiUrl = data.url || null
-    this.followersUrl = data.followers_url || null
-    this.followingUrl = data.following_url || null
-    this.gistsUrl = data.gists_url || null
-    this.starredUrl = data.starred_url || null
-    this.subscriptionsUrl = data.subscriptions_url || null
-    this.organizationsUrl = data.organizations_url || null
-    this.reposUrl = data.repos_url || null
-    this.eventsUrl = data.events_url || null
-    this.receivedEventsUrl = data.received_events_url || null
     this.type = data.type || null
-    this.isSiteAdmin = data.site_admin || false
   }
 }
 
@@ -62,7 +47,7 @@ class Reviewers {
 
   buildEntitites() {
     this.reviewers.map(reviewer => {
-      let [type, name] = reviewer.split(':')
+      let [type, _] = reviewer.split(':')
       switch (type) {
         case 'user':
           new User(reviewer)
@@ -70,7 +55,7 @@ class Reviewers {
           new Team(reviewer)
         default:
           throw new Error(
-            `Invalid reviewer type. Expected one of: 'user', 'team', Got: ${type}`
+            `Invalid reviewer type. Expected one of: 'user', 'team'. Got: ${type}`
           )
       }
     })
@@ -157,3 +142,5 @@ class Team extends Entity {
     }
   }
 }
+
+export { Reviewers }

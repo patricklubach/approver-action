@@ -1,18 +1,23 @@
-import * as core from '@actions/core'
+import fs from 'fs'
+import YAML from 'yaml'
 
 class Config {
-  constructor(config) {
-    if (!config || typeof data !== 'object') {
-      throw new Error('Invalid input: Expected an object.')
-    }
-
-    this.checkOn = config.check_on || 'branch_name'
-    this.rules = config.rules
+  constructor(configPath) {
+    this.config = this.read(configPath)
+    this.checkOnType = this.config.check_on || 'branch_name'
+    this.rules = buildRules(this.config.rules)
 
     this.validate()
+  }
 
-    // The rule which matches
-    this.condition = this.determineCondition()
+  read(configPath) {
+    try {
+      return YAML.parse(fs.readFileSync(configPath, 'utf8'))
+    } catch (error) {
+      throw new Error(
+        `Cannot get data from config file at ${configPath}. Details: ${error.message}`
+      )
+    }
   }
 
   validate() {
@@ -21,7 +26,7 @@ class Config {
       (this.checkOn !== 'branch_name' && this.checkOn !== 'title')
     ) {
       throw new Error(
-        `Invalid check_on property. Use one of: 'branch_name', 'title'. Got: ${this.checkOn}`
+        `Invalid check_on property. Use one of: 'branch_name', 'title'. Got: ${this.checkOnType}`
       )
     }
     if (!Array.isArray(this.rules)) {
@@ -30,37 +35,6 @@ class Config {
       )
     }
   }
-
-  determineCondition() {
-    core.info(`Trying to find rule that matches "${checkOn}"`)
-    for (const rule of data) {
-      if (
-        Object.prototype.hasOwnProperty.call(rule, 'regex') &&
-        isMatchingPattern(checkOn, rule['regex'])
-      ) {
-        core.info(`Rule with regex "${rule.regex}" matches "${checkOn}"`)
-        return rule
-      }
-    }
-    core.warning(
-      `No rule regex matches "${checkOn}". Trying to fallback to default rule`
-    )
-    for (const rule of data) {
-      if (Object.prototype.hasOwnProperty.call(rule, 'default')) {
-        core.info('Default rule found.')
-        return rule
-      }
-    }
-    throw new Error('No matching rule found.')
-  }
 }
 
-class Rule {
-  constructor(rule) {
-    this.regex = rule.regex
-    this.type = rule.type
-    this.amount = rule.amount || null
-    this.reviewers = rule.reviewers
-    this.default = rule.default || false
-  }
-}
+export { Config }
