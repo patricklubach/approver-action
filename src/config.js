@@ -4,7 +4,7 @@ import YAML from 'yaml'
 class Config {
   constructor(configPath) {
     this.config = this.read(configPath)
-    this.checkOnType = this.config.check_on || 'branch_name'
+    this.conditonType = this.config.check_on || 'branch_name'
     this.rules = buildRules(this.config.rules)
 
     this.validate()
@@ -26,7 +26,7 @@ class Config {
       (this.checkOn !== 'branch_name' && this.checkOn !== 'title')
     ) {
       throw new Error(
-        `Invalid check_on property. Use one of: 'branch_name', 'title'. Got: ${this.checkOnType}`
+        `Invalid check_on property. Use one of: 'branch_name', 'title'. Got: ${this.conditonType}`
       )
     }
     if (!Array.isArray(this.rules)) {

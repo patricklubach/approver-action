@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 
-export class Inputs {
+class Inputs {
   constructor() {
     this.configPath = core.getInput('reviewers_file', { required: false })
     this.prNumber = core.getInput('pr_number', { required: true })
@@ -20,3 +20,5 @@ export class Inputs {
     core.debug(`pr_number: ${this.prNumber}`)
   }
 }
+
+export const inputs = new Inputs()

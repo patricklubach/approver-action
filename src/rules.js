@@ -5,6 +5,16 @@ class Rule {
     this.amount = rule.amount || null
     this.reviewers = new Reviewers(rule.reviewers)
     this.default = rule.default || false
+
+    this.validate()
+  }
+
+  validate() {
+    if (this.type === 'AMOUNT' && !this.amount) {
+      throw new Error(
+        "When setting rule type to 'AMOUNT' rule.amount needs to be set!"
+      )
+    }
   }
 }
 
@@ -19,6 +29,7 @@ class Rules {
   }
 
   getDefaultRule() {
+    core.info('Getting default rule')
     const defaultRule = this.rules.find(rule => rule.default)
 
     if (defaultRule) {
@@ -29,7 +40,7 @@ class Rules {
   }
 
   getMatchingRule(condition) {
-    core.debug('Trying to get matching rule')
+    core.info('Getting matching rule')
     try {
       this.rules.find(rule => {
         // Ensure the pattern is a RegExp object if it's provided as a string

@@ -1,80 +1,65 @@
-import * as github from '@actions/github'
-
-import { Config } from './config.js'
-import { Inputs } from './inputs.js'
+import * as core from '@actions/core'
 
 class Check {
-  constructor() {
-    this.inputs = new Inputs()
-    this.config = new Config(this.inputs.configPath)
-    this.context = github.context
-    this.owner = this.context.repo.owner
-    this.repoName = this.context.repo.repo
-    this.pullRequest = getPullRequest()
-    this.event =
-      this.context.payload.pull_request ||
-      this.context.payload.pull_request_review
-    this.githubClient = github.getOctokit(myToken)
-  }
+  constructor() {}
 
-  async getPullRequest() {
-    core.info('Getting pull request')
-
-    try {
-      core.debug(`Fetching pull request from endpoint: ${url}`)
-      return ({ data: pullRequest } = await octokit.rest.pulls.get({
-        owner: this.owner,
-        repo: this.repoName,
-        pull_number: this.event.pull_request.number
-      }))
-    } catch (error) {
-      throw new Error(
-        `The pull request could not be retrieved. Details: ${error.message}`
-      )
-    }
-  }
-
-  async getReviews() {
-    core.info(`Getting reviews of pull request #${this.pullRequest.number}`)
-
-    try {
-      return ({ data: reviews } = await octokit.rest.pulls.get({
-        owner: this.owner,
-        repo: this.repoName,
-        pull_number: this.pullRequest.number
-      }))
-    } catch (error) {
-      throw new Error(
-        `Reviews could not be retrieved from GitHub. Details: ${error.message}`
-      )
-    }
-  }
-
-  getApprovedReviews() {
-    core.info('Getting list of approvals')
-    try {
-      const reviews = this.getReviews()
-      return reviews.filter(review => review.state === 'APPROVED')
-    } catch (error) {
-      throw new Error(
-        `Cannot filter reviews for approvals. Details: ${error.message}`
-      )
-    }
-  }
-
-  getApprovers(reviews) {
-    core.info('Filter list of reviews for users which approved yet')
-    try {
-      let reviewers = []
-      for (const review of reviews) {
-        if (review.state == 'APPROVED') {
-          reviewers.push(['user', review.user.login].join(':'))
+  isFulfilled(rule, reviews, reviewers) {
+    switch (rule.type) {
+      case 'ALL':
+        for (const reviewer of reviewers) {
+          core.debug(`Validating reviewer: ${reviewer.name}`)
+          const validated = reviews.some(
+            review => review.user.login === reviewer.name
+          )
+          if (!validated) {
+            return False
+          }
         }
-      }
-      core.info(`Following users reviewed and approved yet: ${reviewers}`)
-      return reviewers
-    } catch (error) {
-      throw new Error(`Cannot get reviewers. Details: ${error.message}`)
+        return true
+      case 'AMOUNT':
+        const approvalCounter = 0
+        for (const reviewer of reviewers) {
+          core.debug(`Validating reviewer: ${reviewer.name}`)
+          const validated = reviews.some(
+            review => review.user.login === reviewer.name
+          )
+          if (validated) {
+            approvalCounter++
+          }
+        }
+        return approvalCounter >= rule.amount
+      case 'ONE_OF_EACH':
+        for (const review of reviews) {
+          const name = review.user.login
+          core.debug(`Validating reviewer: ${name}`)
+          // Search desired reviewers if matches pr reviewer
+          // user reviewers take prcedence over team members
+          for (const reviewer of reviewers) {
+            if (reviewer.type === 'user') {
+              if (name === reviewer.login && !reviewer.checked) {
+                reviewer.checked = true
+                break
+              }
+            }
+          }
+          // when reviewer is not found in defined users. Search for reviewer in teams
+          for (const reviewer of reviewers) {
+            if (reviewer.type === 'team') {
+              if (reviewer.isMember(name) && !reviewer.checked) {
+                reviewer.checked = true
+              }
+            }
+          }
+          // check if all reviewers are checked
+          for (const reviewer of reviewers) {
+            if (!reviewer.checked) {
+              return false
+            }
+          }
+        }
+        return true
+      default:
+        return false
     }
   }
 }
