@@ -4,8 +4,11 @@ class Check {
   constructor() {}
 
   isFulfilled(rule, reviews, reviewers) {
+    core.info(`Check if rule is fulfilled...`)
+    core.debug(`Rule type is '${rule.type}'`)
     switch (rule.type) {
       case 'ALL':
+        core.debug(`Rule type is 'ALL'`)
         for (const reviewer of reviewers) {
           core.debug(`Validating reviewer: ${reviewer.name}`)
           const validated = reviews.some(
@@ -17,6 +20,7 @@ class Check {
         }
         return true
       case 'AMOUNT':
+        core.debug(`Rule type is 'AMOUNT'`)
         const approvalCounter = 0
         for (const reviewer of reviewers) {
           core.debug(`Validating reviewer: ${reviewer.name}`)
@@ -29,6 +33,7 @@ class Check {
         }
         return approvalCounter >= rule.amount
       case 'ONE_OF_EACH':
+        core.debug(`Rule type is 'ONE_OF_EACH'`)
         for (const review of reviews) {
           const name = review.user.login
           core.debug(`Validating reviewer: ${name}`)

@@ -4,12 +4,15 @@
 
 import * as core from '@actions/core'
 
+
 function validateEvent(eventName) {
+  core.debug(`Validating if event type '${eventName}' is supported`)
   if (!['pull_request', 'pull_request_review'].includes(eventName)) {
     throw new Error(
       `Unsupported event type! Supporing: ["pull_request", "pull_request_review"]. Got: ${eventName}`
     )
   }
+  core.debug(`Event type '${eventName}' is supported`)
 }
 
 function reviewersSet(reviewers, pullRequest) {
@@ -102,6 +105,9 @@ async function getPullRequest(client, owner, repoName, number) {
 }
 
 function getCondition(conditionType, pullRequest) {
+  core.debug(
+    `Determine condition value based on condition type '${conditionType}'`
+  )
   if (conditionType === 'branch_name') {
     return pullRequest.branchName
   }

@@ -1,6 +1,10 @@
+import { Reviewers } from './entities.js'
+
+import * as core from '@actions/core'
+
 class Rule {
   constructor(rule) {
-    this.regex = rule.regex
+    this.regex = rule.regex || null
     this.type = rule.type
     this.amount = rule.amount || null
     this.reviewers = new Reviewers(rule.reviewers)
@@ -10,6 +14,7 @@ class Rule {
   }
 
   validate() {
+    core.debug(`Validating rule type...`)
     if (this.type === 'AMOUNT' && !this.amount) {
       throw new Error(
         "When setting rule type to 'AMOUNT' rule.amount needs to be set!"
@@ -18,7 +23,7 @@ class Rule {
   }
 }
 
-class Rules {
+export class Rules {
   constructor(rules) {
     this.rules = []
     this.init(rules)
@@ -33,6 +38,7 @@ class Rules {
     const defaultRule = this.rules.find(rule => rule.default)
 
     if (defaultRule) {
+      core.info('Default rule found')
       return defaultRule
     } else {
       throw new Error('No default rule found!')
@@ -40,35 +46,43 @@ class Rules {
   }
 
   getMatchingRule(condition) {
-    core.info('Getting matching rule')
+    core.debug('Getting matching rule')
     try {
-      this.rules.find(rule => {
+      for (const rule of this.rules) {
+        if (!rule.regex) {
+          core.debug(`Rule has no regex defined. Skipping...`)
+          continue
+        }
         // Ensure the pattern is a RegExp object if it's provided as a string
         if (typeof rule.regex === 'string') {
           var regex = new RegExp(rule.regex)
         } else {
-          throw new Error(`Invalid regular expression.`)
+          throw new Error(
+            `Invalid regular expression. Regular expression is no string!`
+          )
         }
 
         // Test the string against the regex pattern
-        const isValid = regex.test(conditionValue)
+        const isValid = regex.test(condition)
         core.debug(
-          `Check that "${conditionValue}" matches regex ${rule.regex} => ${isValid}`
+          `Check that "${condition}" matches regex ${rule.regex} => ${isValid}`
         )
         if (isValid) {
           return rule
         }
-      })
+      }
     } catch (error) {
-      throw new Error(`Invalid regex pattern. Details: ${error.message}`)
+      throw new Error(
+        `Regular expression check failed. Details: ${error.message}`
+      )
     }
     core.warning(
-      `No rule regex matches pattern "${condition}". Trying to fallback to default rule`
+      `No rule matching "${condition}" found. Trying to fallback to default rule`
     )
     try {
       return this.getDefaultRule()
     } catch (error) {
-      core.error(error)
+      core.error(error.message)
       throw new Error(
         'No rule matches pattern and no default rule was defined!'
       )

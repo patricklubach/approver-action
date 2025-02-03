@@ -1,29 +1,33 @@
 import * as core from '@actions/core'
+import * as github from '@actions/github'
 
-import { inputs } from './inputs'
+import { inputs } from './inputs.js'
 
-const client = new core.Octokit({ auth: inputs.token })
+const client = github.getOctokit({ auth: inputs.token })
 const repo = process.env.GITHUB_REPOSITORY
 const [owner, repoName] = repo.split('/')
 
-class Reviewers {
+export class Reviewers {
   constructor(reviewers) {
     this.reviewers = reviewers
     this.entities = this.buildEntitites()
   }
 
   buildEntitites() {
+    core.debug(`Building entities...`)
     this.reviewers.map(reviewer => {
+      core.debug(`Build entity for reviewer: ${reviewer}`)
       let [type, _] = reviewer.split(':')
-      switch (type) {
-        case 'user':
-          new User(reviewer)
-        case 'team':
-          new Team(reviewer)
-        default:
-          throw new Error(
-            `Invalid reviewer type. Expected one of: 'user', 'team'. Got: ${type}`
-          )
+      if (type === 'user') {
+        core.debug(`Reviewer is of type user`)
+        new User(reviewer)
+      } else if (type === 'team') {
+        core.debug(`Reviewer is of type team`)
+        new Team(reviewer)
+      } else {
+        throw new Error(
+          `Invalid reviewer type. Expected one of: 'user', 'team'. Got: ${type}`
+        )
       }
     })
   }
@@ -46,14 +50,18 @@ class Entity {
 class User extends Entity {
   constructor(principle) {
     super(principle)
-    if (this.type !== 'user') throw new Error("User must have type 'user'")
+    if (this.type !== 'user')
+      throw new Error(
+        `Principle type needs to be of type 'user'. Got: ${this.type}`
+      )
   }
 }
 
 class Team extends Entity {
   constructor(principle) {
     super(principle)
-    if (this.type !== 'team') throw new Error("Team must have type 'team'")
+    if (this.type !== 'team')
+      throw new Error(`Type needs to be of type 'team'. Got: ${this.type}`)
 
     this.members = this.resolveTeam()
     this.approvalsCounter = 0
@@ -61,6 +69,7 @@ class Team extends Entity {
   }
 
   async resolveTeam() {
+    core.debug(`Getting members for the team ${this.name}`)
     try {
       const { data: members } = await client.request(
         `GET /orgs/${owner}/teams/${this.name}/members`,
@@ -81,17 +90,18 @@ class Team extends Entity {
   }
 
   updateApprovalsCounter() {
+    core.debug(`Upating approvals counter`)
     this.members.forEach(() => this.approvalsCounter++)
   }
 
   isMember(name) {
+    core.debug(`Check if ${name} is member of team ${this.name}`)
     for (const member of this.members) {
       if (member.login === name) {
+        core.debug(`${name} is member of team ${this.name}`)
         return true
       }
     }
     return false
   }
 }
-
-export { Reviewers }

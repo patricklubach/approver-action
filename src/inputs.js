@@ -14,10 +14,9 @@ class Inputs {
   printDebug() {
     // Inputs debugs outputs
     core.debug('Inputs:')
-    core.debug(`repo: ${this.repo}`)
-    core.debug(`owner: ${this.owner}`)
-    core.debug(`repo_name: ${this.repoName}`)
+    core.debug(`reviewers_file: ${this.configPath}`)
     core.debug(`pr_number: ${this.prNumber}`)
+    core.debug(`set_reviewers: ${this.setReviewers}`)
   }
 }
 
