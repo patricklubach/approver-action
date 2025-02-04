@@ -77,7 +77,7 @@ export class Rules {
       )
     }
     core.warning(
-      `No rule matching "${condition}" found. Trying to fallback to default rule`
+      `No rule matching pattern matches ${rule.type} "${condition}". Trying to fallback to default rule`
     )
     try {
       return this.getDefaultRule()
