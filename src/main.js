@@ -40,8 +40,6 @@ export function run() {
     core.info(`Success! Rule is fulfilled!`)
   } catch (error) {
     // Fail the workflow run if an error occurs
-    // core.error(`Reviewers Action failed! Details: ${error.message}`)
-    // core.error(error.cause)
     core.setFailed(`Reviewers Action failed! Details: ${error.message}`)
   }
 }

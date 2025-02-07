@@ -1,6 +1,15 @@
 import * as core from '@actions/core'
 
-class Inputs {
+/**
+ * Manages input configuration for the review system.
+ *
+ * @class Inputs
+ */
+export class Inputs {
+  /**
+   * Constructs an instance of `Inputs` to manage configuration parameters.
+   * Reads inputs from command line arguments or defaults if not provided.
+   */
   constructor() {
     this.configPath = core.getInput('reviewers_file', { required: false })
     this.prNumber = core.getInput('pr_number', { required: true })
@@ -11,12 +20,17 @@ class Inputs {
     this.printDebug()
   }
 
+  /**
+   * Prints debug information about the current input configuration.
+   *
+   * @private
+   */
   printDebug() {
-    // Inputs debugs outputs
     core.debug('Inputs:')
     core.debug(`reviewers_file: ${this.configPath}`)
     core.debug(`pr_number: ${this.prNumber}`)
     core.debug(`set_reviewers: ${this.setReviewers}`)
+    core.debug(`token: ${this.token}`)
   }
 }
 

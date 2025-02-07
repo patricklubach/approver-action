@@ -2,7 +2,19 @@ import { Reviewers } from './entities.js'
 
 import * as core from '@actions/core'
 
-class Rule {
+/**
+ * Manages and validates rules for review system operations.
+ *
+ * @class Rules
+ */
+
+export class Rule {
+  /**
+   * Constructs a new rule object with specified properties.
+   *
+   * @param {Object} rule - The rule object containing configuration properties
+   * @returns {Rule} An instance of the Rule class
+   */
   constructor(rule) {
     this.regex = rule.regex || null
     this.type = rule.type
@@ -13,26 +25,53 @@ class Rule {
     this.validate()
   }
 
+  /**
+   * Validates that the rule meets specific criteria.
+   *
+   * @private
+   */
   validate() {
-    core.debug(`Validating rule type...`)
+    core.debug('Validating rule type...')
     if (this.type === 'AMOUNT' && !this.amount) {
       throw new Error(
-        "When setting rule type to 'AMOUNT' rule.amount needs to be set!"
+        "When setting rule type to 'AMOUNT', rule.amount needs to be specified."
       )
     }
   }
 }
 
+/**
+ * Manages an array of rules and provides functionality to get matching rules.
+ *
+ * @class Rules
+ */
+
 export class Rules {
+  /**
+   * Constructs a new instance of the Rules class, initializing with provided rules.
+   *
+   * @param {Array} rules - Array of rule objects to initialize with
+   * @returns {Rules} An instance of the Rules class
+   */
   constructor(rules) {
     this.rules = []
     this.init(rules)
   }
 
+  /**
+   * Initializes the Rules class by mapping over provided rules and creating Rule instances.
+   *
+   * @private
+   */
   init(rules) {
     this.rules = rules.map(rule => new Rule(rule))
   }
 
+  /**
+   * Retrieves the default rule defined for the system.
+   *
+   * @returns {Rule} The default rule if found, else throws an error
+   */
   getDefaultRule() {
     core.info('Getting default rule')
     const defaultRule = this.rules.find(rule => rule.default)
@@ -41,35 +80,58 @@ export class Rules {
       core.info('Default rule found')
       return defaultRule
     } else {
-      throw new Error('No default rule found!')
+      throw new Error('No default rule exists!')
     }
   }
 
+  /**
+   * Finds the matching rule based on a given condition.
+   *
+   * @param {string} condition - The condition to check against rules' regex patterns
+   * @returns {Rule} The matching rule, or null if none match
+   */
   getMatchingRule(condition) {
-    core.debug('Getting matching rule')
+    core.debug('Attempting to find matching rule for condition: ' + condition)
     try {
       for (const rule of this.rules) {
         if (!rule.regex) {
-          core.debug(`Rule has no regex defined. Skipping...`)
+          core.debug('Skipping rule without a regex pattern')
           continue
         }
-        // Ensure the pattern is a RegExp object if it's provided as a string
+
+        // Ensure that regex is a valid RegExp object
         if (typeof rule.regex === 'string') {
-          var regex = new RegExp(rule.regex)
+          const regex = new RegExp(rule.regex)
+          core.debug(
+            `Testing condition "${condition}" against regex ${rule.regex}`
+          )
+          if (regex.test(condition)) {
+            return rule
+          }
+        } else if (rule.regex instanceof RegExp) {
+          const matches = rule.regex.test(condition)
+          core.debug(
+            `Condition "${condition}" matches regex ${rule.regex.toString()}: ${matches}`
+          )
+          if (matches) {
+            return rule
+          }
         } else {
           throw new Error(
-            `Invalid regular expression. Regular expression is no string!`
+            'Invalid regex type provided. Please use a string or RegExp object.'
           )
         }
 
-        // Test the string against the regex pattern
-        const isValid = regex.test(condition)
-        core.debug(
-          `Check that "${condition}" matches regex ${rule.regex} => ${isValid}`
-        )
-        if (isValid) {
-          return rule
-        }
+        // If no match found, move to the next rule
+      }
+
+      core.warning('No matching rule was found for the given condition')
+      try {
+        const defaultRule = this.getDefaultRule()
+        return defaultRule
+      } catch (error) {
+        core.error(error.message)
+        throw new Error('No matching rule and no default rule exists.')
       }
     } catch (error) {
       throw new Error(

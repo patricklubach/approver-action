@@ -1,8 +1,27 @@
 import * as core from '@actions/core'
 
+/**
+ * A utility class for evaluating review rules and determining their fulfillment status.
+ *
+ * @class Check
+ */
 class Check {
+  /**
+   * Constructs an instance of the Check class.
+   * The constructor does not take any parameters.
+   */
   constructor() {}
 
+  /**
+   * Checks if a given rule is fulfilled based on the provided reviews and reviewers.
+   *
+   * @param {Object} rule - The review rule to check, containing a 'type' property that can be 'ALL', 'AMOUNT', or 'ONE_OF_EACH'.
+   * @param {Array} reviews - An array of review objects, each containing user information and their comments.
+   * @param {Array} reviewers - An array of reviewer objects, where each reviewer has an 'id' (login) and a 'type' ('user' or 'team').
+   *
+   * @returns {Boolean} True if the rule is fulfilled; False otherwise.
+   * @throws {Error} If the rule type is not recognized.
+   */
   isFulfilled(rule, reviews, reviewers) {
     core.info(`Check if rule is fulfilled...`)
     core.debug(`Rule type is '${rule.type}'`)
