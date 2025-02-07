@@ -4,15 +4,19 @@ import * as github from '@actions/github'
 import { check } from './check.js'
 import { Config } from './config.js'
 import { inputs } from './inputs.js'
-import { pullRequest } from './pullrequest.js'
+import * as pr from './pullrequest.js'
 import { Rules } from './rules.js'
 import * as utils from './utils.js'
 import { version } from './version.js'
 
-export function run() {
+export async function run() {
   try {
     core.info(`Starting reviewer action (version: ${version})`)
     utils.validateEvent(github.context.eventName)
+
+    const { data: pullRequestData } = await pr.getPullRequest()
+    const { data: pullRequestReviews } = await pr.getReviews(pullRequestData)
+    const pullRequest = new pr.PullRequest(pullRequestData, pullRequestReviews)
 
     const config = new Config(inputs.configPath)
     const rules = new Rules(config.rules)

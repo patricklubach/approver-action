@@ -17,7 +17,7 @@ export class Inputs {
       core.getInput('set_reviewers', { required: false }) || false
     this.token = core.getInput('token', { required: true })
 
-    this.printDebug()
+    this.#printDebug()
   }
 
   /**
@@ -25,12 +25,11 @@ export class Inputs {
    *
    * @private
    */
-  printDebug() {
+  #printDebug() {
     core.debug('Inputs:')
     core.debug(`reviewers_file: ${this.configPath}`)
     core.debug(`pr_number: ${this.prNumber}`)
     core.debug(`set_reviewers: ${this.setReviewers}`)
-    core.debug(`token: ${this.token}`)
   }
 }
 

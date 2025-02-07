@@ -45,8 +45,6 @@ on:
       - opened
       - reopened
       - ready_for_review
-      - review_requested
-      - review_request_removed
 
 permissions:
   contents: read
@@ -186,14 +184,5 @@ rules:
 To test the action locally, first install [`act`](https://github.com/nektos/act). Then you need to create a `event.json` file to match an already open pull request. For more information see [act documentation](https://nektosact.com/usage/index.html#skipping-jobs). Afterwards you can simply run:
 
 ```bash
-npm run test:local
+npm run test:local:check
 ```
-/*
-case 1: only users are defined => all users have to approve
-case 2: users and teams are defined
-  - if user is in reviewers file directly it counts for the user
-  - if user is in reviewers file directly and user is in group it counts for the user and not for the group
-  - if user is not defined in the reviewers file directly and is member of group then it counts for the group
-case 3: only teams are defined =>
-  - at least one of each group needs to approve. this counts for the first group the user was found in
-**/

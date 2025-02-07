@@ -27,7 +27,7 @@ const octokit = github.getOctokit(inputs.token)
  * const pr = new PullRequest(data, reviews);
  * pr.setPrReviewers(['user:john', 'team:frontend']);
  */
-class PullRequest {
+export class PullRequest {
   /**
    * A class representing a pull request with methods to manage its reviews.
    */
@@ -75,7 +75,7 @@ class PullRequest {
   }
 }
 
-async function getPullRequest() {
+export async function getPullRequest() {
   /**
    * Retrieves information about a specific pull request.
    *
@@ -102,7 +102,7 @@ async function getPullRequest() {
   }
 }
 
-async function getReviews(pullRequest) {
+export async function getReviews(pullRequest) {
   /**
    * Fetches the reviews for a specified pull request.
    *
@@ -117,8 +117,3 @@ async function getReviews(pullRequest) {
     pull_number: pullRequest.number
   })
 }
-
-const { data: pullRequestData } = await getPullRequest()
-const { data: pullRequestReviews } = await getReviews(pullRequestData)
-
-export const pullRequest = new PullRequest(pullRequestData, pullRequestReviews)
