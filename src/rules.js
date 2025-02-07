@@ -124,20 +124,12 @@ export class Rules {
 
         // If no match found, move to the next rule
       }
-
-      core.warning('No matching rule was found for the given condition')
-      try {
-        const defaultRule = this.getDefaultRule()
-        return defaultRule
-      } catch (error) {
-        core.error(error.message)
-        throw new Error('No matching rule and no default rule exists.')
-      }
     } catch (error) {
       throw new Error(
         `Regular expression check failed. Details: ${error.message}`
       )
     }
+
     core.warning(
       `No rule matching pattern matches ${rule.type} "${condition}". Trying to fallback to default rule`
     )
@@ -145,9 +137,7 @@ export class Rules {
       return this.getDefaultRule()
     } catch (error) {
       core.error(error.message)
-      throw new Error(
-        'No rule matches pattern and no default rule was defined!'
-      )
+      throw new Error('No matching rule and no default rule exists.')
     }
   }
 }
