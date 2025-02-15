@@ -3,6 +3,8 @@
 */
 
 import * as core from '@actions/core'
+import { PullRequestReviewPayload } from './interfaces'
+import { PullRequest } from './pullrequest'
 
 /**
  * Validates if the event name is either 'pull_request' or 'pull_request_review'.
@@ -11,7 +13,7 @@ import * as core from '@actions/core'
  * @param {String} eventName - The name of the event to validate
  * @throws Error - If the event type is not supported
  */
-function validateEvent(eventName) {
+function validateEvent(eventName: string) {
   core.debug(`Validating if event type '${eventName}' is supported`)
   if (!['pull_request', 'pull_request_review'].includes(eventName)) {
     throw new Error(
@@ -29,7 +31,7 @@ function validateEvent(eventName) {
  * @param {Object} pullRequest - Pull request object containing repository details
  * @returns {Boolean} true if all required reviewers are correctly set, false otherwise
  */
-function reviewersSet(reviewers, pullRequest) {
+function setReviewers(reviewers: Array<string>, pullRequest: PullRequest) {
   core.info('Checking if reviewers are already set')
   const userReviewers = reviewers.filter(reviewer => {
     if (reviewer.startsWith('user')) {
@@ -118,7 +120,7 @@ function setPrReviewers(pullRequest, reviewers) {
  * @param {Number} number - Pull request number to fetch
  * @returns {Promise} Promise with pull request data structure
  */
-async function getPullRequest(client, owner, repoName, number) {
+async function getPullRequest(client, owner, repoName, number): Promise<PullRequestReviewPayload> {
   core.info(`Getting pull request #${number}`)
   try {
     core.debug(`Fetching pull request #${number}`)
@@ -127,7 +129,7 @@ async function getPullRequest(client, owner, repoName, number) {
       repo: repoName,
       pull_number: number
     }))
-  } catch (error) {
+  } catch (error: any) {
     throw new Error(
       `The pull request could not be retrieved. Details: ${error.message}`
     )
@@ -177,7 +179,8 @@ export {
   getApprovedReviews,
   getCondition,
   getPullRequest,
-  reviewersSet,
   setPrReviewers,
+  setReviewers,
   validateEvent
 }
+

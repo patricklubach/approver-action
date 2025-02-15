@@ -6,6 +6,11 @@ import * as core from '@actions/core'
  * @class Inputs
  */
 export class Inputs {
+  configPath: string
+  prNumber: string
+  setReviewers: string
+  token: string
+
   /**
    * Constructs an instance of `Inputs` to manage configuration parameters.
    * Reads inputs from command line arguments or defaults if not provided.
@@ -14,7 +19,7 @@ export class Inputs {
     this.configPath = core.getInput('reviewers_file', { required: false })
     this.prNumber = core.getInput('pr_number', { required: true })
     this.setReviewers =
-      core.getInput('set_reviewers', { required: false }) || false
+      core.getInput('set_reviewers', { required: false }) || "false"
     this.token = core.getInput('token', { required: true })
 
     this.#printDebug()

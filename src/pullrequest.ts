@@ -1,7 +1,9 @@
-import * as core from '@actions/core'
-import * as github from '@actions/github'
+import * as core from '@actions/core';
+import * as github from '@actions/github';
 
-import { inputs } from './inputs.js'
+import { inputs } from './inputs.js';
+import { WebhookPayload } from './interfaces';
+
 
 const octokit = github.getOctokit(inputs.token)
 
@@ -28,10 +30,18 @@ const octokit = github.getOctokit(inputs.token)
  * pr.setPrReviewers(['user:john', 'team:frontend']);
  */
 export class PullRequest {
+  pullRequestRaw: any
+  number: number
+  repo: any
+  branchName: string
+  title: string
+  requestedReviewers: any
+  requestedTeams: any
+  reviews: any
   /**
    * A class representing a pull request with methods to manage its reviews.
    */
-  constructor(data, reviews) {
+  constructor(data: any, reviews: any) {
     this.pullRequestRaw = data
     this.number = this.pullRequestRaw.number
     this.repo = this.pullRequestRaw.head.repo
@@ -50,7 +60,7 @@ export class PullRequest {
    * @returns {void}
    * @throws {Error} If there is an error setting the reviewers.
    */
-  setPrReviewers(reviewers) {
+  setPrReviewers(reviewers: Array<string>) {
     try {
       const userReviewers = reviewers.filter(reviewer =>
         reviewer.startsWith('user')
@@ -67,7 +77,7 @@ export class PullRequest {
         reviewers: userReviewers,
         team_reviewers: teamReviewers
       })
-    } catch (error) {
+    } catch (error: any) {
       throw new Error(
         `The reviewers for pull request #${this.number} could not be set. Details: ${error.message}`
       )
@@ -75,26 +85,21 @@ export class PullRequest {
   }
 }
 
-export async function getPullRequest() {
+export async function getPullRequest(owner: string, reponame: string, prNumber: number): Promise<WebhookPayload> {
   /**
    * Retrieves information about a specific pull request.
    *
    * @param {Object} eventPayload - The context payload containing pull request details
-   * @returns {Promise<Object>} A promise resolving to a PullRequest object with details like number, repo, title, and more.
+   * @returns {Promise<WebhookPayload>} A promise resolving to a PullRequest object with details like number, repo, title, and more.
    * @throws {Error} If the pull request cannot be retrieved, including any original errors
    */
-  core.info(`Getting pull request #${inputs.prNumber}`)
+  core.info(`Getting pull request #${prNumber}`)
   try {
-    const eventPayload = github.context.payload
-    const owner = eventPayload.pull_request.head.repo.owner.login
-    const reponame = eventPayload.pull_request.head.repo.name
-    const number = eventPayload.pull_request.number
-
     return await octokit.rest.pulls.get({
       owner: owner,
-      repo: reponame,
-      pull_number: number
-    })
+        repo: reponame,
+        pull_number: prNumber
+      })
   } catch (error) {
     throw new Error(`The pull request could not be retrieved`, {
       cause: error
@@ -102,18 +107,18 @@ export async function getPullRequest() {
   }
 }
 
-export async function getReviews(pullRequest) {
+export async function getReviews(owner: string, reponame: string, prNumber: number): Promise<any> {
   /**
    * Fetches the reviews for a specified pull request.
    *
-   * @param {Object} pullRequest - The PullRequest instance containing the pull request data
+   * @param {PullRequest} WebhookPayload - The PullRequest instance containing the pull request data
    * @returns {Promise<Object[]>} A promise resolving to an array of review objects with details like user, team, and comment.
    * @throws {Error} If there's an error fetching the reviews
    */
-  core.info(`Getting reviewers for pull request #${pullRequest.number}`)
+  core.info(`Getting reviewers for pull request #${prNumber}`)
   return await octokit.rest.pulls.listReviews({
-    owner: pullRequest.head.repo.owner.login,
-    repo: pullRequest.head.repo.name,
-    pull_number: pullRequest.number
+    owner: owner,
+    repo: reponame,
+    pull_number: prNumber
   })
 }

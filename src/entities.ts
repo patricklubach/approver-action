@@ -3,8 +3,8 @@ import * as github from '@actions/github'
 
 import { inputs } from './inputs.js'
 
-const client = github.getOctokit({ auth: inputs.token })
-const repo = process.env.GITHUB_REPOSITORY
+const client = github.getOctokit(inputs.token)
+const repo: string | undefined = process.env.GITHUB_REPOSITORY
 const [owner, repoName] = repo.split('/')
 
 /**
@@ -13,15 +13,17 @@ const [owner, repoName] = repo.split('/')
  * @class Reviewers
  */
 export class Reviewers {
+  reviewers: Array<string>
+  entities: Array<Entity>
   /**
    * Constructs an instance of `Reviewers` with the provided list of reviewers.
    * Each reviewer can be in the format 'user:username' or 'team:team_name'.
    *
    * @param {Array} reviewers - Array of strings specifying reviewers in the format 'user:username' or 'team:team_name'
    */
-  constructor(reviewers) {
+  constructor(reviewers: Array<string>) {
     this.reviewers = reviewers
-    this.entities = this.buildEntities()
+    this.entities = this.#buildEntities()
   }
 
   /**
@@ -30,7 +32,7 @@ export class Reviewers {
    * @param {Array} reviewers - Array of reviewer strings
    * @returns {Array} An array of Entity objects, either User or Team
    */
-  buildEntities() {
+  #buildEntities(): Array<Entity> {
     core.debug('Building entities...')
     return this.reviewers.map(reviewer => {
       const [type, name] = reviewer.split(':')
@@ -55,13 +57,17 @@ export class Reviewers {
  * @class Entity
  */
 class Entity {
+  principle: string
+  type: string
+  name: string
+  checked: boolean
   /**
    * Constructs an Entity from the given principle string in the format 'type:name'.
    *
    * @param {string} principle - The principle string in the format 'type:name' e.g., 'user:john'
    * @throws {Error} If the format is invalid
    */
-  constructor(principle) {
+  constructor(principle: string) {
     if (!principle.includes(':')) {
       throw new Error("Invalid format. Use '<type>:<name>'")
     }
@@ -87,7 +93,7 @@ class User extends Entity {
    * @super
    * @throws {Error} If the type is not 'user'
    */
-  constructor(principle) {
+  constructor(principle: string) {
     super(principle)
     if (this.type !== 'user') {
       throw new Error(
@@ -103,6 +109,9 @@ class User extends Entity {
  * @class Team
  */
 class Team extends Entity {
+  members: Array<User>
+  approvalsCounter: number
+  neededApprovalsCounter: number
   /**
    * Constructs a new Team entity from the given principle string.
    * populates team members and other properties.
@@ -111,7 +120,7 @@ class Team extends Entity {
    * @super
    * @throws {Error} If the type is not 'team'
    */
-  constructor(principle) {
+  constructor(principle: string) {
     super(principle)
     if (this.type !== 'team') {
       throw new Error(`Type needs to be of type 'team'. Got: ${this.type}`)
@@ -128,7 +137,7 @@ class Team extends Entity {
    * @returns {Array} An array of User objects representing the team members
    * @throws {Error} If there's an issue fetching team members
    */
-  async resolveTeam() {
+  async resolveTeam(): Promise<User[]> {
     core.debug(`Getting members for the team ${this.name}`)
     try {
       const response = await client.request(
@@ -141,11 +150,11 @@ class Team extends Entity {
           }
         }
       )
-      const members = response.data.map(
-        member => new User(`${member.type}:${member.login}`)
+      const members: Array<User> = response.data.map(
+        (member: any) => new User(`${member.type}:${member.login}`)
       )
       return members
-    } catch (error) {
+    } catch (error: any) {
       throw new Error(
         `The members of team ${this.name} could not be retrieved from GitHub. Details: ${error.message}`
       )
@@ -167,8 +176,8 @@ class Team extends Entity {
    * @param {string} name - The username to check
    * @returns {boolean} True if the user is in the team, false otherwise
    */
-  isMember(name) {
+  isMember(name: string) {
     core.debug(`Check if ${name} is member of team ${this.name}`)
-    return this.members.some(member => member.login === name)
+    return this.members.some(member => member.name === name)
   }
 }

@@ -1,4 +1,5 @@
 import * as core from '@actions/core'
+import { Rule } from './rules'
 
 /**
  * A utility class for evaluating review rules and determining their fulfillment status.
@@ -22,7 +23,7 @@ class Check {
    * @returns {Boolean} True if the rule is fulfilled; False otherwise.
    * @throws {Error} If the rule type is not recognized.
    */
-  isFulfilled(rule, reviews, reviewers) {
+  isFulfilled(rule: Rule, reviews: Array<Rev, reviewers): boolean {
     core.info(`Check if rule is fulfilled...`)
     core.debug(`Rule type is '${rule.type}'`)
     switch (rule.type) {

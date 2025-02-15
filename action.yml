@@ -14,7 +14,7 @@ inputs:
   set_reviewers:
     description: Decides whether the action sets the reviewers for the pull request. If set to true the reviewers are set and the action exits.
     required: false
-    default: ""
+    default: "false"
 runs:
   using: "node20"
-  main: "src/index.js"
+  main: "dist/index.js"

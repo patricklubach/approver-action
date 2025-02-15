@@ -4,17 +4,34 @@ import * as github from '@actions/github'
 import { check } from './check.js'
 import { Config } from './config.js'
 import { inputs } from './inputs.js'
+import { WebhookPayload } from './interfaces'
 import * as pr from './pullrequest.js'
 import { Rules } from './rules.js'
 import * as utils from './utils.js'
-import { version } from './version.js'
+import { version } from './version'
 
 export async function run() {
   try {
     core.info(`Starting reviewer action (version: ${version})`)
     utils.validateEvent(github.context.eventName)
 
-    const { data: pullRequestData } = await pr.getPullRequest()
+
+    const eventPayload: WebhookPayload = github.context.payload
+    const owner: string | undefined = eventPayload.pull_request.head.repo.owner.login
+    const reponame: string | undefined = eventPayload.pull_request.head.repo.name
+    const number: number | undefined = eventPayload.pull_request.number
+
+    if (typeof owner != 'string') {
+      throw new Error('Could not find owner of repository in event payload!')
+    }
+    if (typeof reponame != 'string') {
+      throw new Error('Could not find repo name of repository in event payload!')
+    }
+    if (typeof number != 'number') {
+      throw new Error('Could not find number of pull requeest in event payload!')
+    }
+
+    const { data: pullRequestData } = await pr.getPullRequest(owner, reponame, number)
     const { data: pullRequestReviews } = await pr.getReviews(pullRequestData)
     const pullRequest = new pr.PullRequest(pullRequestData, pullRequestReviews)
 
@@ -30,7 +47,7 @@ export async function run() {
     // Note: All previously set reviewers on the pr are overwritten and reviews are resetted!
     if (inputs.setReviewers) {
       core.debug('set_reviewers property is set')
-      if (!utils.reviewersSet()) pullRequest.setPrReviewers(reviewers.reviewers)
+      if (!utils.setReviewers()) pullRequest.setPrReviewers(reviewers.reviewers)
       return
     }
 
@@ -42,7 +59,7 @@ export async function run() {
       throw new Error('Rule is not fulfilled!')
     }
     core.info(`Success! Rule is fulfilled!`)
-  } catch (error) {
+  } catch (error: any) {
     // Fail the workflow run if an error occurs
     core.setFailed(`Reviewers Action failed! Details: ${error.message}`)
   }
