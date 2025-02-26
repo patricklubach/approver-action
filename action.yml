@@ -1,10 +1,10 @@
-name: "reviewers"
-description: "GitHub action that checks if approval rule matches"
+name: 'reviewers'
+description: 'GitHub action that checks if approval rule matches'
 inputs:
   reviewers_file:
-    description: "Relative path to the reviewers file."
+    description: 'Relative path to the reviewers file.'
     required: false
-    default: ".reviewers.yaml"
+    default: '.reviewers.yaml'
   token:
     description: A GitHub access token
     required: true
@@ -12,9 +12,11 @@ inputs:
     description: The number of the pull request to apply defined rules
     required: true
   set_reviewers:
-    description: Decides whether the action sets the reviewers for the pull request. If set to true the reviewers are set and the action exits.
+    description:
+      Decides whether the action sets the reviewers for the pull request. If set
+      to true the reviewers are set and the action exits.
     required: false
-    default: "false"
+    default: 'false'
 runs:
-  using: "node20"
-  main: "dist/index.js"
+  using: 'node20'
+  main: 'dist/index.js'

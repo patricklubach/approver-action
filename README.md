@@ -73,7 +73,8 @@ jobs:
           set_reviewers: true
 ```
 
-When you want to let the action check the reviews when a review was dismissed or submitted:
+When you want to let the action check the reviews when a review was dismissed or
+submitted:
 
 ```yaml
 name: Check reviews
@@ -111,57 +112,65 @@ jobs:
 
 ## Configuration examples
 
-In the following there is a minimal example of the `.reviewers.yaml` file. If no other option is being used then every listed approver needs to approve the PR to fulfill the requirement. If a team is defined then each member of the team needs to approve the PR.
+In the following there is a minimal example of the `.reviewers.yaml` file. If no
+other option is being used then every listed approver needs to approve the PR to
+fulfill the requirement. If a team is defined then each member of the team needs
+to approve the PR.
 
 ```yaml
 rules:
-- regex: ^feature/
-  reviewers:
-    - team:MyApproverGroup
-    - user:RobotUser9
+  - regex: ^feature/
+    reviewers:
+      - team:MyApproverGroup
+      - user:RobotUser9
 ```
 
-You can limit how many reviewers need to approve the pull request by setting the `count` keyword:
+You can limit how many reviewers need to approve the pull request by setting the
+`count` keyword:
 
 ```yaml
 rules:
-- regex: ^feature/
-  count: 1
-  reviewers:
-    - team:MyApproverGroup
-    - user:RobotUser9
+  - regex: ^feature/
+    count: 1
+    reviewers:
+      - team:MyApproverGroup
+      - user:RobotUser9
 ```
 
 You can have different rules for defined regex pattern like below:
 
 ```yaml
 rules:
-- regex: ^feature/
-  reviewers:
-    - team:MyApproverGroup
-    - user:RobotUser9
-- regex: ^bugfix/
-  reviewers:
-    - user:Foo
+  - regex: ^feature/
+    reviewers:
+      - team:MyApproverGroup
+      - user:RobotUser9
+  - regex: ^bugfix/
+    reviewers:
+      - user:Foo
 ```
 
-You can also define a default rule which is identified by the default keyword. If you have multiple default rules defined the first which is found is being returned and is applied to the PR:
+You can also define a default rule which is identified by the default keyword.
+If you have multiple default rules defined the first which is found is being
+returned and is applied to the PR:
 
 ```yaml
 rules:
-- regex: ^feature/
-  reviewers:
-    - team:MyApproverGroup
-    - user:RobotUser9
-- regex: ^bugfix/
-  reviewers:
-    - user:Foo
-- default: true
-  reviewers:
-    - user:Foo
+  - regex: ^feature/
+    reviewers:
+      - team:MyApproverGroup
+      - user:RobotUser9
+  - regex: ^bugfix/
+    reviewers:
+      - user:Foo
+  - default: true
+    reviewers:
+      - user:Foo
 ```
 
-In default configuration the approver action is checking on the branch of the pull request. You can configure that behaviour by setting the `check_on` configuration on a per rule base:
+In default configuration the approver action is checking on the branch of the
+pull request. You can configure that behaviour by setting the `check_on`
+configuration on a per rule base:
 
 ```yaml
 check_on: branch
@@ -181,8 +190,19 @@ rules:
 
 ## Test locally
 
-To test the action locally, first install [`act`](https://github.com/nektos/act). Then you need to create a `event.json` file to match an already open pull request. For more information see [act documentation](https://nektosact.com/usage/index.html#skipping-jobs). Afterwards you can simply run:
+To test the action locally, first install
+[`act`](https://github.com/nektos/act) and [`Github cli`](https://github.com/cli/cli/tree/trunk?tab=readme-ov-file#installation). Then login to github using `gh auth login`. Then you need to create an `event.json`
+file to match an already open pull request. For more information see
+[act documentation](https://nektosact.com/usage/index.html#skipping-jobs).
+Afterwards you can simply run:
 
 ```bash
 npm run test:local:check
 ```
+
+<details>
+  <summary>event.json</summary>
+  ```json
+
+  ```
+</details>

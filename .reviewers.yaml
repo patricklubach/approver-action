@@ -5,7 +5,7 @@ rules:
     amount: 1
     reviewers:
       - user:racoon63
-  - regex: "^dependabot/"
+  - regex: '^dependabot/'
     reviewers:
       - user:patricklubach
   - default: true

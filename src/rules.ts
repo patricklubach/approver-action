@@ -1,28 +1,31 @@
-import { Reviewers } from './entities.js'
-
 import * as core from '@actions/core'
+
+import { buildEntities, Reviewers } from './entities.js'
 
 /**
  * Manages and validates rules for review system operations.
  *
  * @class Rules
+ * @param rule - The rule object containing configuration properties
  */
 
 export class Rule {
-  /**
-   * Constructs a new rule object with specified properties.
-   *
-   * @param {Object} rule - The rule object containing configuration properties
-   * @returns {Rule} An instance of the Rule class
-   */
-  constructor(rule) {
-    this.regex = rule.regex || null
-    this.type = rule.type
-    this.amount = rule.amount || null
-    this.reviewers = new Reviewers(rule.reviewers)
-    this.default = rule.default || false
+  amount: number
+  default: boolean
+  regex: RegExp
+  reviewers: Reviewers
+  reviewersRaw: string[]
+  type: string
 
-    this.validate()
+  constructor(rule: any) {
+    this.amount = rule?.amount ?? 0
+    this.default = rule?.default ?? false
+    this.regex = new RegExp(rule.regex)
+    this.reviewers = buildEntities(rule.reviewers)
+    this.reviewersRaw = rule.reviewers
+    this.type = rule?.type ?? 'ALL'
+
+    this.#validate()
   }
 
   /**
@@ -30,7 +33,7 @@ export class Rule {
    *
    * @private
    */
-  validate() {
+  #validate() {
     core.debug('Validating rule type...')
     if (this.type === 'AMOUNT' && !this.amount) {
       throw new Error(
@@ -43,28 +46,24 @@ export class Rule {
 /**
  * Manages an array of rules and provides functionality to get matching rules.
  *
- * @class Rules
+ * @param rules - Array of rule objects to initialize with
  */
-
 export class Rules {
-  /**
-   * Constructs a new instance of the Rules class, initializing with provided rules.
-   *
-   * @param {Array} rules - Array of rule objects to initialize with
-   * @returns {Rules} An instance of the Rules class
-   */
-  constructor(rules) {
+  rules: Array<Rule>
+
+  constructor(rules: any) {
     this.rules = []
-    this.init(rules)
+    this.#init(rules)
   }
 
   /**
    * Initializes the Rules class by mapping over provided rules and creating Rule instances.
    *
    * @private
+   * @param rules - List of rules to create a Rule
    */
-  init(rules) {
-    this.rules = rules.map(rule => new Rule(rule))
+  #init(rules: Array<any>) {
+    this.rules = rules.map((rule: any) => new Rule(rule))
   }
 
   /**
@@ -72,7 +71,7 @@ export class Rules {
    *
    * @returns {Rule} The default rule if found, else throws an error
    */
-  getDefaultRule() {
+  getDefaultRule(): Rule {
     core.info('Getting default rule')
     const defaultRule = this.rules.find(rule => rule.default)
 
@@ -80,62 +79,38 @@ export class Rules {
       core.info('Default rule found')
       return defaultRule
     } else {
-      throw new Error('No default rule exists!')
+      throw new Error('No default rule found!')
     }
   }
 
   /**
    * Finds the matching rule based on a given condition.
    *
-   * @param {string} condition - The condition to check against rules' regex patterns
-   * @returns {Rule} The matching rule, or null if none match
+   * @param condition - The condition to check against rules' regex patterns
+   * @returns The matching Rule
    */
-  getMatchingRule(condition) {
-    core.debug('Attempting to find matching rule for condition: ' + condition)
+  getMatchingRule(condition: string): Rule {
+    core.debug(`Attempting to find matching rule for condition: ${condition}`)
     try {
       for (const rule of this.rules) {
-        if (!rule.regex) {
-          core.debug('Skipping rule without a regex pattern')
-          continue
+        if (rule.regex.test(condition)) {
+          return rule
         }
-
-        // Ensure that regex is a valid RegExp object
-        if (typeof rule.regex === 'string') {
-          const regex = new RegExp(rule.regex)
-          core.debug(
-            `Testing condition "${condition}" against regex ${rule.regex}`
-          )
-          if (regex.test(condition)) {
-            return rule
-          }
-        } else if (rule.regex instanceof RegExp) {
-          const matches = rule.regex.test(condition)
-          core.debug(
-            `Condition "${condition}" matches regex ${rule.regex.toString()}: ${matches}`
-          )
-          if (matches) {
-            return rule
-          }
-        } else {
-          throw new Error(
-            'Invalid regex type provided. Please use a string or RegExp object.'
-          )
-        }
-
-        // If no match found, move to the next rule
+        throw new Error(
+          'Invalid regex type provided. Please use a string or RegExp object.'
+        )
       }
-    } catch (error) {
+    } catch (error: any) {
       throw new Error(
         `Regular expression check failed. Details: ${error.message}`
       )
     }
-
     core.warning(
-      `No rule matching pattern matches ${rule.type} "${condition}". Trying to fallback to default rule`
+      `No rule matching pattern matches condition "${condition}". Trying to fallback to default rule`
     )
     try {
       return this.getDefaultRule()
-    } catch (error) {
+    } catch (error: any) {
       core.error(error.message)
       throw new Error('No matching rule and no default rule exists.')
     }

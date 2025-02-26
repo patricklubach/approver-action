@@ -1,9 +1,8 @@
-import * as core from '@actions/core';
-import * as github from '@actions/github';
+import * as core from '@actions/core'
+import * as github from '@actions/github'
 
-import { inputs } from './inputs.js';
-import { WebhookPayload } from './interfaces';
-
+import { inputs } from './inputs.js'
+import { WebhookPayload } from './interfaces.js'
 
 const octokit = github.getOctokit(inputs.token)
 
@@ -11,17 +10,17 @@ const octokit = github.getOctokit(inputs.token)
  * Represents a pull request and provides methods for managing its reviewers.
  *
  * @class
- * @param {Object} data - The raw data of the pull request containing details like number, title, and requested reviewers.
- * @param {Array} reviews - An array of review objects, each with details about the reviewer (either 'user:username' or 'team:teamname').
+ * @param data - The raw data of the pull request containing details like number, title, and requested reviewers.
+ * @param reviews - An array of review objects, each with details about the reviewer (either 'user:username' or 'team:teamname').
  *
- * @property {Number} number - The unique identifier for the pull request.
- * @property {Object} repo - Contains information about the repository, including its owner and name.
- * @property {String} repo.org - The organization owner's login associated with the repository.
- * @property {String} branchName - The name of the branch the pull request is targeting.
- * @property {String} title - The title of the pull request.
- * @property {Array} requestedReviewers - An array of users or teams that have been requested to review the pull request.
- * @property {Array} requestedTeams - An array of teams that have been requested to review the pull request.
- * @property {Array} reviews - An array of all reviews associated with this pull request.
+ * @property number - The unique identifier for the pull request.
+ * @property repo - Contains information about the repository, including its owner and name.
+ * @property repo.org - The organization owner's login associated with the repository.
+ * @property branchName - The name of the branch the pull request is targeting.
+ * @property title - The title of the pull request.
+ * @property requestedReviewers - An array of users or teams that have been requested to review the pull request.
+ * @property requestedTeams - An array of teams that have been requested to review the pull request.
+ * @property reviews - An array of all reviews associated with this pull request.
 
  * @method setPrReviewers(reviewers) - Sets the reviewers for the pull request by filtering and sending a request to update them.
  *
@@ -56,11 +55,11 @@ export class PullRequest {
   /**
    * Sets reviewers for a pull request.
    *
-   * @param {Array} reviewers - Array of reviewer strings ('user:login' or 'team:team_name').
-   * @returns {void}
+   * @param reviewers - Array of reviewer strings ('user:login' or 'team:team_name').
+   * @returns
    * @throws {Error} If there is an error setting the reviewers.
    */
-  setPrReviewers(reviewers: Array<string>) {
+  setPrReviewers(reviewers: string[]) {
     try {
       const userReviewers = reviewers.filter(reviewer =>
         reviewer.startsWith('user')
@@ -85,7 +84,11 @@ export class PullRequest {
   }
 }
 
-export async function getPullRequest(owner: string, reponame: string, prNumber: number): Promise<WebhookPayload> {
+export async function getPullRequest(
+  owner: string,
+  reponame: string,
+  prNumber: number
+): Promise<WebhookPayload> {
   /**
    * Retrieves information about a specific pull request.
    *
@@ -97,17 +100,19 @@ export async function getPullRequest(owner: string, reponame: string, prNumber: 
   try {
     return await octokit.rest.pulls.get({
       owner: owner,
-        repo: reponame,
-        pull_number: prNumber
-      })
-  } catch (error) {
-    throw new Error(`The pull request could not be retrieved`, {
-      cause: error
+      repo: reponame,
+      pull_number: prNumber
     })
+  } catch (error: any) {
+    throw new Error(`The pull request could not be retrieved`)
   }
 }
 
-export async function getReviews(owner: string, reponame: string, prNumber: number): Promise<any> {
+export async function getReviews(
+  owner: string,
+  reponame: string,
+  prNumber: number
+): Promise<any> {
   /**
    * Fetches the reviews for a specified pull request.
    *

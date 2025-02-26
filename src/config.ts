@@ -1,4 +1,4 @@
-import fs from 'fs'
+import fs from 'node:fs'
 import YAML from 'yaml'
 
 import * as core from '@actions/core'
@@ -14,11 +14,11 @@ class ConfigValidationError extends Error {
   /**
    * Constructs a new instance of `ConfigValidationError` with the given message and optional additional arguments.
    *
-   * @param {string} message - The error message to display.
-   * @param {...any} args - Additional arguments to pass to the super constructor (Error).
+   * @param message - The error message to display.
+   * @param args - Additional arguments to pass to the super constructor (Error).
    */
   constructor(message: string, ...args: string[]) {
-    super(message, ...args)
+    super(message)
     this.name = this.constructor.name
   }
 }
@@ -27,17 +27,13 @@ class ConfigValidationError extends Error {
  * A class responsible for managing and validating configuration settings.
  *
  * @class Config
+ * @param {string} configPath - The path to the YAML configuration file to read.
  */
 class Config {
   config: any
   conditionType: string
   rules: Array<any>
-  /**
-   * Constructs an instance of `Config` with the specified config file path.
-   * Reads and parses the configuration file, then initializes validation settings.
-   *
-   * @param {string} configPath - The path to the YAML configuration file to read.
-   */
+
   constructor(configPath: string) {
     this.config = this.read(configPath)
     this.conditionType = this.config.check_on || 'branch_name'
@@ -59,9 +55,7 @@ class Config {
     try {
       return YAML.parse(fs.readFileSync(configPath, 'utf8'))
     } catch (error: any) {
-      throw new Error('Cannot get data from config file at ${configPath}.', {
-        cause: error
-      })
+      throw new Error('Cannot get data from config file at ${configPath}.')
     }
   }
 
