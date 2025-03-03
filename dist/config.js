@@ -107,6 +107,7 @@ class Config {
         if (!Array.isArray(this.rules)) {
             throw new ConfigValidationError("Invalid rules property. 'rules' property is either not defined or empty!");
         }
+        // Ensure
         core.debug(`Validation successful`);
     }
 }

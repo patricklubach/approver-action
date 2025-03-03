@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import YAML from 'yaml'
 
 import * as core from '@actions/core'
+import { ConfigRule } from './interfaces'
 
 /**
  * A custom error class used to indicate invalid configuration conditions.
@@ -32,7 +33,7 @@ class ConfigValidationError extends Error {
 class Config {
   config: any
   conditionType: string
-  rules: Array<any>
+  rules: ConfigRule[]
 
   constructor(configPath: string) {
     this.config = this.read(configPath)
@@ -81,6 +82,7 @@ class Config {
         "Invalid rules property. 'rules' property is either not defined or empty!"
       )
     }
+    // Ensure
     core.debug(`Validation successful`)
   }
 }

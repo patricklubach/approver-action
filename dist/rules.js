@@ -52,7 +52,15 @@ class Rule {
     constructor(rule) {
         this.amount = rule?.amount ?? 0;
         this.default = rule?.default ?? false;
-        this.regex = new RegExp(rule.regex);
+        if (!rule.regex && rule?.default != true) {
+            throw new Error('Rule is invalid. Regex is not set and rule is not default rule!');
+        }
+        if (typeof rule.regex === 'string') {
+            this.regex = rule.regex;
+        }
+        else {
+            this.regex = "";
+        }
         this.reviewers = (0, entities_js_1.buildEntities)(rule.reviewers);
         this.reviewersRaw = rule.reviewers;
         this.type = rule?.type ?? 'ALL';
@@ -64,10 +72,11 @@ class Rule {
      * @private
      */
     #validate() {
-        core.debug('Validating rule type...');
+        core.debug(`Validating rule type "${this.type}"...`);
         if (this.type === 'AMOUNT' && !this.amount) {
             throw new Error("When setting rule type to 'AMOUNT', rule.amount needs to be specified.");
         }
+        core.debug('Validation succesfull!');
     }
 }
 exports.Rule = Rule;
@@ -97,10 +106,10 @@ class Rules {
      * @returns {Rule} The default rule if found, else throws an error
      */
     getDefaultRule() {
-        core.info('Getting default rule');
+        core.info('Trying to get default rule...');
         const defaultRule = this.rules.find(rule => rule.default);
         if (defaultRule) {
-            core.info('Default rule found');
+            core.info('Default rule found!');
             return defaultRule;
         }
         else {
@@ -117,10 +126,15 @@ class Rules {
         core.debug(`Attempting to find matching rule for condition: ${condition}`);
         try {
             for (const rule of this.rules) {
-                if (rule.regex.test(condition)) {
+                if (rule.regex === "") {
+                    continue;
+                }
+                const reg = new RegExp(rule.regex);
+                if (reg.test(condition)) {
+                    core.info(`Matching rule found!`);
+                    core.debug(JSON.stringify(rule));
                     return rule;
                 }
-                throw new Error('Invalid regex type provided. Please use a string or RegExp object.');
             }
         }
         catch (error) {

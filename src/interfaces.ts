@@ -82,13 +82,9 @@ export interface PullRequestReviewPayload {
 
 export interface ConfigRule {
   [key: string]: any
-  check_on?: string
-  rules: {
-    [key: string]: any
-    regex: string
-    amount?: number
-    reviewers: string[]
-    default?: boolean
-    type?: string
-  }[]
+  regex?: string
+  amount?: number
+  reviewers: string[]
+  default?: boolean
+  type?: string
 }

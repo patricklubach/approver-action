@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 
 import { buildEntities, Reviewers } from './entities.js'
+import { ConfigRule } from './interfaces.js'
 
 /**
  * Manages and validates rules for review system operations.
@@ -12,15 +13,22 @@ import { buildEntities, Reviewers } from './entities.js'
 export class Rule {
   amount: number
   default: boolean
-  regex: RegExp
+  regex: string
   reviewers: Reviewers
   reviewersRaw: string[]
   type: string
 
-  constructor(rule: any) {
+  constructor(rule: ConfigRule) {
     this.amount = rule?.amount ?? 0
     this.default = rule?.default ?? false
-    this.regex = new RegExp(rule.regex)
+    if (!rule.regex && rule?.default != true) {
+      throw new Error('Rule is invalid. Regex is not set and rule is not default rule!')
+    }
+    if (typeof rule.regex === 'string') {
+      this.regex = rule.regex
+    } else {
+      this.regex = ""
+    }
     this.reviewers = buildEntities(rule.reviewers)
     this.reviewersRaw = rule.reviewers
     this.type = rule?.type ?? 'ALL'
@@ -34,12 +42,13 @@ export class Rule {
    * @private
    */
   #validate() {
-    core.debug('Validating rule type...')
+    core.debug(`Validating rule type "${this.type}"...`)
     if (this.type === 'AMOUNT' && !this.amount) {
       throw new Error(
         "When setting rule type to 'AMOUNT', rule.amount needs to be specified."
       )
     }
+    core.debug('Validation succesfull!')
   }
 }
 
@@ -49,9 +58,9 @@ export class Rule {
  * @param rules - Array of rule objects to initialize with
  */
 export class Rules {
-  rules: Array<Rule>
+  rules: Rule[]
 
-  constructor(rules: any) {
+  constructor(rules: ConfigRule[]) {
     this.rules = []
     this.#init(rules)
   }
@@ -62,7 +71,7 @@ export class Rules {
    * @private
    * @param rules - List of rules to create a Rule
    */
-  #init(rules: Array<any>) {
+  #init(rules: ConfigRule[]) {
     this.rules = rules.map((rule: any) => new Rule(rule))
   }
 
@@ -72,11 +81,11 @@ export class Rules {
    * @returns {Rule} The default rule if found, else throws an error
    */
   getDefaultRule(): Rule {
-    core.info('Getting default rule')
+    core.info('Trying to get default rule...')
     const defaultRule = this.rules.find(rule => rule.default)
 
     if (defaultRule) {
-      core.info('Default rule found')
+      core.info('Default rule found!')
       return defaultRule
     } else {
       throw new Error('No default rule found!')
@@ -93,12 +102,15 @@ export class Rules {
     core.debug(`Attempting to find matching rule for condition: ${condition}`)
     try {
       for (const rule of this.rules) {
-        if (rule.regex.test(condition)) {
+        if (rule.regex === "") {
+          continue
+        }
+        const reg = new RegExp(rule.regex)
+        if (reg.test(condition)) {
+          core.info(`Matching rule found!`)
+          core.debug(JSON.stringify(rule))
           return rule
         }
-        throw new Error(
-          'Invalid regex type provided. Please use a string or RegExp object.'
-        )
       }
     } catch (error: any) {
       throw new Error(

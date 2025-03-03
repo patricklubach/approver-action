@@ -26,7 +26,6 @@ class Check {
    */
   isFulfilled(rule: Rule, reviews: any[], reviewers: Reviewers): boolean {
     core.info(`Check if rule is fulfilled...`)
-    core.debug(`Rule type is '${rule.type}'`)
     switch (rule.type) {
       case 'ALL':
         core.debug(`Rule type is 'ALL'`)

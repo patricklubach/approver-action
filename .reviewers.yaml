@@ -10,4 +10,4 @@ rules:
       - user:patricklubach
   - default: true
     reviewers:
-      - user:patricklubach
+      - user:racoon63
